@@ -22,7 +22,7 @@ int plus250s[16] = {0, 8, 9, 17, 18, 26, 27, 35, 36, 44, 45, 53, 54, 62, 63, 71}
 int plus100s[16] = {1, 7, 10, 16, 19, 25, 28, 34, 37, 43, 46, 52, 55, 61, 64, 70};
 int plus50s[16] = {2, 6, 11, 15, 20, 24, 29, 33, 38, 42, 47, 51, 56, 60, 65, 69};
 long score = 0;
-long romscore = (EEPROM.read(0) * 255) + EEPROM.read(1);
+long romscore = (EEPROM.read(0) * pow(256, 2)) + (EEPROM.read(1) * 256) + EEPROM.read(2);
 long highscore = romscore;
 int credits = 0;
 int pixel = 0;
@@ -46,7 +46,7 @@ void setCredits(int to, bool dot = false) {
     creditOverflow = true;
     bonusCredit = true;
   }
-  boolean pinModes[8] = {
+  bool pinModes[8] = {
     (credits == 0 || credits == 2 || credits == 6 || credits == 8),
     (credits == 0 || credits == 2 || credits == 3 || credits == 5 || credits == 6 || credits >= 8),
     (credits != 2),
@@ -60,15 +60,17 @@ void setCredits(int to, bool dot = false) {
   for (int i=0; i<8; i++) digitalWrite(i + 4, pinModes[i]);
 }
 
-void setHighscore(int score, int colonpoint = 0) {
+void setHighscore(long score, int colonpoint = 0) {
   if (score > highscore && millis() > 5500) {
-    int bytes = score / 255;
-    int remainder = score % 255;
-    EEPROM.write(0, bytes);
-    EEPROM.write(1, remainder);
+    int byte1 = min(255, (score / 256 / 256));
+    int byte2 = (score / 256) % 256;
+    int byte3 = score % 256;
+    EEPROM.write(0, byte1);
+    EEPROM.write(1, byte2);
+    EEPROM.write(2, byte3);
   }
   highscore = score;
-  if (highscore > 50000) highscore = 50000;
+  if (highscore > 16777215) highscore = 16777215;
   displayB.point(colonpoint);
   displayB.clearDisplay();
   if (highscore <= 9999) {
@@ -77,17 +79,19 @@ void setHighscore(int score, int colonpoint = 0) {
     if (score >= 100) displayB.display(1, highscore / 100 % 10); 
     if (score >= 1000) displayB.display(0, highscore / 1000 % 10);
   } else {
-    displayB.display(3, 12);
-    displayB.display(2, highscore / 100 % 10);
-    displayB.display(1, highscore / 1000 % 10);
-    displayB.display(0, highscore / 10000 % 10);
+    int power = log10(highscore) - 1;
+    int digits = highscore / pow(10, power);
+    displayB.display(3, power);
+    displayB.display(2, 14);
+    displayB.display(1, digits % 10);
+    displayB.display(0, digits / 10 % 10);
   }
 }
 
-void setScore(int to, int colonpoint = 0) {
+void setScore(long to, int colonpoint = 0) {
   if (to > highscore) setHighscore(to, colonpoint);
   score = to;
-  if (score > 50000) score = 50000;
+  if (score > 16777215) score = 16777215;
   displayA.point(colonpoint);
   displayA.clearDisplay();
   if (score <= 9999) {
@@ -96,10 +100,12 @@ void setScore(int to, int colonpoint = 0) {
     if (score >= 100) displayA.display(1, score / 100 % 10);   
     if (score >= 1000) displayA.display(0, score / 1000 % 10);
   } else {
-    displayA.display(3, 12);
-    displayA.display(2, score / 100 % 10);
-    displayA.display(1, score / 1000 % 10);
-    displayA.display(0, score / 10000 % 10);
+    int power = log10(score) - 1;
+    int digits = score / pow(10, power);
+    displayA.display(3, power);
+    displayA.display(2, 14);
+    displayA.display(1, digits % 10);
+    displayA.display(0, digits / 10 % 10);
   }
 }
 
