@@ -22,7 +22,7 @@ int plus250s[16] = {0, 8, 9, 17, 18, 26, 27, 35, 36, 44, 45, 53, 54, 62, 63, 71}
 int plus100s[16] = {1, 7, 10, 16, 19, 25, 28, 34, 37, 43, 46, 52, 55, 61, 64, 70};
 int plus50s[16] = {2, 6, 11, 15, 20, 24, 29, 33, 38, 42, 47, 51, 56, 60, 65, 69};
 long score = 0;
-long romscore = (EEPROM.read(0) * pow(256, 2)) + (EEPROM.read(1) * 256) + EEPROM.read(2);
+long romscore = (EEPROM.read(0) * pow(256, 3)) + (EEPROM.read(1) * pow(256, 2)) + (EEPROM.read(2) * 256) + EEPROM.read(3);
 long highscore = romscore;
 int credits = 0;
 int pixel = 0;
@@ -62,15 +62,17 @@ void setCredits(int to, bool dot = false) {
 
 void setHighscore(long score, int colonpoint = 0) {
   if (score > highscore && millis() > 5500) {
-    int byte1 = min(255, (score / 256 / 256));
-    int byte2 = (score / 256) % 256;
-    int byte3 = score % 256;
+    int byte1 = min(255, (score / 256 / 256 / 256));
+    int byte2 = (score / 256 / 256) % 256;
+    int byte3 = (score / 256) % 256;
+    int byte4 = score % 256;
     EEPROM.write(0, byte1);
     EEPROM.write(1, byte2);
     EEPROM.write(2, byte3);
+    EEPROM.write(3, byte4);
   }
   highscore = score;
-  if (highscore > 16777215) highscore = 16777215;
+  if (highscore > 2147483640) highscore = 2147483640;
   displayB.point(colonpoint);
   displayB.clearDisplay();
   if (highscore <= 9999) {
@@ -91,7 +93,7 @@ void setHighscore(long score, int colonpoint = 0) {
 void setScore(long to, int colonpoint = 0) {
   if (to > highscore) setHighscore(to, colonpoint);
   score = to;
-  if (score > 16777215) score = 16777215;
+  if (score > 2147483640) score = 2147483640;
   displayA.point(colonpoint);
   displayA.clearDisplay();
   if (score <= 9999) {
@@ -145,10 +147,10 @@ int pixelInBounds(int pixel) {
 void gameOver() {
   processingGameOver = true;
   strip.clear();
-    for (int i=0; i<4; i++) strip.fill(strip.Color(255, 0, 0), i * 18 + 9, 9);
-    strip.show();
+  for (int i=0; i<4; i++) strip.fill(strip.Color(255, 0, 0), i * 18 + 9, 9);
+  strip.show();
   if (score == 0) {
-    for (int i=0; i<3; i++) {
+    for (int i=0; i<2; i++) {
       delay(300);
       strip.clear();
       strip.show();
